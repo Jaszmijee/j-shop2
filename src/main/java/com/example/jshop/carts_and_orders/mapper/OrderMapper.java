@@ -16,7 +16,7 @@ public class OrderMapper {
                 order.getListOfProducts(),
                 order.getCalculatedPrice().toString(),
                 order.getOrder_status().toString(),
-                order.getCreated().plusDays(14)
+                order.getPaymentDue()
         );
     }
 

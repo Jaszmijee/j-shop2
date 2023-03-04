@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductService {
 
-       private final ProductRepository productRepository;
+    private final ProductRepository productRepository;
 
     public Product saveProduct(Product product) {
         return productRepository.save(product);
@@ -27,6 +27,6 @@ public class ProductService {
     }
 
     public List<Product> findAllProducts() {
-       return productRepository.findAll();
+        return productRepository.findAll();
     }
 }

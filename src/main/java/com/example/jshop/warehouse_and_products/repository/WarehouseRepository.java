@@ -23,16 +23,7 @@ public interface WarehouseRepository extends CrudRepository<Warehouse, Long> {
 
     void deleteByProduct_ProductID(Long productId);
 
-    @Query(value = "SELECT * from Warehouse w " +
-            "JOIN products p on w.products_product_id = p.product_id " +
-            "JOIN categories c ON p.categories_categoryID = c.categoryID " +
-            "where " +
-            "c.category like %:NAME% " +
-            "ORDER BY p.price ASC " +
-            "LIMIT :limit", nativeQuery = true)
-    List<Warehouse> findWarehouseByProduct_Category_Name(@Param("NAME") String nameFragment, Integer limit);
-
-    @Query(value = "SELECT * from Warehouse " +
+     @Query(value = "SELECT * from Warehouse " +
             "where products_product_id = :productId", nativeQuery = true)
     Optional<Warehouse> findWarehouseByProductId(@Param("productId") Long productId);
 

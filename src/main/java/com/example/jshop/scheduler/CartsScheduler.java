@@ -18,21 +18,21 @@ public class CartsScheduler {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void removeEmptyCarts() {
-        log.info("deleting empty carts" + LocalDate.now());
+        log.info("deleting empty carts " + LocalDate.now());
         try {
             cartService.deleteByCartStatus(CartStatus.EMPTY);
-            log.info("empty carts deleted" + LocalDate.now());
+            log.info("empty carts deleted " + LocalDate.now());
         } catch (Exception e) {
-            log.error("empty cars were not removed", e);
+            log.error("empty cars were not removed ", e);
         }
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void removeUnfinalizedCarts() {
-        log.info("deleting carts with status\"PROCESSING\" longer than 3 days" + LocalDate.now());
+        log.info("deleting carts with status\"PROCESSING\" longer than 3 days " + LocalDate.now());
         try {
             cartService.deleteByProcessingTime();
-            log.info("carts with status\"PROCESSING\" longer than 3 days deleted" + LocalDate.now());
+            log.info("carts with status\"PROCESSING\" longer than 3 days deleted " + LocalDate.now());
         } catch (Exception e) {
             log.error("\"PROCESSING\" carts were not removed", e);
         }

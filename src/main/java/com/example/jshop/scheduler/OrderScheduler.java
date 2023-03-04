@@ -6,6 +6,7 @@ import com.example.jshop.error_handlers.exceptions.OrderNotFoundException;
 import com.example.jshop.carts_and_orders.service.CartService;
 import com.example.jshop.carts_and_orders.service.OrderService;
 import com.example.jshop.email.service.SimpleEmailService;
+import com.example.jshop.error_handlers.exceptions.ProductNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,10 +18,8 @@ public class OrderScheduler {
 
     @Autowired
     OrderService orderService;
-
     @Autowired
     SimpleEmailService emailService;
-
     @Autowired
     CartService cartService;
     @Autowired
@@ -35,7 +34,7 @@ public class OrderScheduler {
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
-    public void removeUnpaidOrders() throws  OrderNotFoundException  {
+    public void removeUnpaidOrders() throws OrderNotFoundException, ProductNotFoundException {
         List<Order> unpaidOrders = orderService.findUnpaidOrders();
         for (Order orderToCancel : unpaidOrders) {
               cartService.cancelOrder(orderToCancel.getOrderID());

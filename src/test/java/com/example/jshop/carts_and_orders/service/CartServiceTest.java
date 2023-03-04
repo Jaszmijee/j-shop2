@@ -436,7 +436,7 @@ class CartServiceTest {
                 cartService.cancelCart(cart.getCartID());
                 assertFalse(cartRepository.existsById(cart.getCartID()));
                 assertEquals(28, warehouse.getProductQuantity());
-            } catch (CartNotFoundException e) {
+            } catch (CartNotFoundException | ProductNotFoundException e) {
                 e.printStackTrace();
             }
         }
@@ -452,7 +452,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+             customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.PROCESSING)
                     .build();
@@ -469,7 +473,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.PROCESSING)
                     .build();
@@ -486,7 +494,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+                try {
+                    customerService.createNewCustomer(loggedCustomerDto);
+                } catch (InvalidCustomerDataException e) {
+                    e.printStackTrace();
+                }
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.FINALIZED)
                     .listOfItems(List.of())
@@ -505,7 +517,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+                try {
+                    customerService.createNewCustomer(loggedCustomerDto);
+                } catch (InvalidCustomerDataException e) {
+                    e.printStackTrace();
+                }
             AuthenticationDataDto authenticationDataDto = new AuthenticationDataDto("user", pwwd.toCharArray());
 
             Category category = new Category("testCategory");
@@ -532,7 +548,8 @@ class CartServiceTest {
                 assertEquals("UNPAID", orderDtoToCustomer.getStatus());
                 assertEquals("25.00", orderDtoToCustomer.getTotalPrice());
                 assertEquals("FINALIZED", cart.getCartStatus().toString());
-            } catch (CartNotFoundException | UserNotFoundException | AccessDeniedException e) {
+            } catch (CartNotFoundException | UserNotFoundException | AccessDeniedException |
+                     InvalidCustomerDataException e) {
                 e.printStackTrace();
             }
         }
@@ -548,7 +565,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.FINALIZED)
@@ -571,7 +592,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.FINALIZED)
@@ -589,12 +614,16 @@ class CartServiceTest {
         }
 
         @Test
-        void payForCartOrderNotFoundExceptionAccessDeniedException() {
+        void payForCartOrderNotFoundException() {
             // Given
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.FINALIZED)
@@ -617,7 +646,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
 
             Category category = new Category("testCategory");
@@ -648,7 +681,8 @@ class CartServiceTest {
                 assertNull(order.getCart());
                 assertEquals("PAID", order.getOrder_status().toString());
                 assertEquals("50.00", orderDtoToCustomer.getTotalPrice());
-            } catch (UserNotFoundException | AccessDeniedException | OrderNotFoundException | PaymentErrorException e) {
+            } catch (UserNotFoundException | AccessDeniedException | OrderNotFoundException | PaymentErrorException |
+                     InvalidCustomerDataException e) {
                 e.printStackTrace();
             }
         }
@@ -684,9 +718,20 @@ class CartServiceTest {
             cartRepository.save(cart);
             UnauthenticatedCustomerDto unauthenticatedCustomerDto = new UnauthenticatedCustomerDto("", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
+            UnauthenticatedCustomerDto unauthenticatedCustomerDto1 = new UnauthenticatedCustomerDto(null, "DDD", "ptr@ptr",
+                    "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
+            UnauthenticatedCustomerDto unauthenticatedCustomerDto2 = new UnauthenticatedCustomerDto("Adam", "DDD", "ptrptr",
+                    "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
+            UnauthenticatedCustomerDto unauthenticatedCustomerDto3 = new UnauthenticatedCustomerDto("Adam", "DDD", "ptr@ptr",
+                    "Fairy", "5", "5", "55-5558", "Maputo", "Mozambique");
+
 
             //When & Then
-            assertThrows(InvalidCustomerDataException.class, () -> cartService.payForCartUnauthenticatedCustomer(cart.getCartID(), unauthenticatedCustomerDto));
+            assertAll(
+                    () -> assertThrows(InvalidCustomerDataException.class, () -> cartService.payForCartUnauthenticatedCustomer(cart.getCartID(), unauthenticatedCustomerDto)),
+                    () -> assertThrows(InvalidCustomerDataException.class, () -> cartService.payForCartUnauthenticatedCustomer(cart.getCartID(), unauthenticatedCustomerDto1)),
+                    () -> assertThrows(InvalidCustomerDataException.class, () -> cartService.payForCartUnauthenticatedCustomer(cart.getCartID(), unauthenticatedCustomerDto2)),
+                    () -> assertThrows(InvalidCustomerDataException.class, () -> cartService.payForCartUnauthenticatedCustomer(cart.getCartID(), unauthenticatedCustomerDto3)));
         }
 
         @Test
@@ -755,7 +800,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
             cartRepository.save(cart);
             Order order = new Order(customer_logged.get(), cart, LocalDate.of(2023, 2, 25), ORDER_STATUS.PAID, "dummyList", new
@@ -787,7 +836,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto loggedCustomerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(loggedCustomerDto);
+            try {
+                customerService.createNewCustomer(loggedCustomerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
             Cart cart = Cart.builder()
                     .cartStatus(CartStatus.FINALIZED)
@@ -803,7 +856,7 @@ class CartServiceTest {
                 cartService.cancelOrder(order.getOrderID());
                 assertFalse(orderRepository.existsById(order.getOrderID()));
                 assertEquals(30, warehouse.getProductQuantity());
-            } catch (OrderNotFoundException e) {
+            } catch (OrderNotFoundException | ProductNotFoundException e) {
                 e.printStackTrace();
             }
         }
@@ -819,7 +872,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto customerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(customerDto);
+            try {
+                customerService.createNewCustomer(customerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Cart cart = new Cart(CartStatus.FINALIZED, List.of(), BigDecimal.TEN, LocalDate.of(2023, 2, 23));
             cartRepository.save(cart);
             Optional<LoggedCustomer> customer_logged = customerRepository.findCustomer_LoggedByUserNameEquals("user");
@@ -839,7 +896,11 @@ class CartServiceTest {
             String pwwd = "password";
             LoggedCustomerDto customerDto = new LoggedCustomerDto("user", pwwd, "Adam", "DDD", "ptr@ptr",
                     "Fairy", "5", "5", "55-555", "Maputo", "Mozambique");
-            customerService.createNewCustomer(customerDto);
+            try {
+                customerService.createNewCustomer(customerDto);
+            } catch (InvalidCustomerDataException e) {
+                e.printStackTrace();
+            }
             Cart cart = new Cart(CartStatus.FINALIZED, List.of(), BigDecimal.TEN, LocalDate.of(2023, 2, 23));
             cartRepository.save(cart);
             AuthenticationDataDto loggedCustomerDto = new AuthenticationDataDto("user", "something".toCharArray());

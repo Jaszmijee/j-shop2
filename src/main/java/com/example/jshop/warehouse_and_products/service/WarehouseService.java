@@ -1,7 +1,7 @@
 package com.example.jshop.warehouse_and_products.service;
 
 import com.example.jshop.carts_and_orders.domain.order.Order;
-import com.example.jshop.error_handlers.exceptions.CategoryNotFoundException;
+import com.example.jshop.error_handlers.exceptions.ProductNotFoundException;
 import com.example.jshop.warehouse_and_products.domain.warehouse.Warehouse;
 import com.example.jshop.error_handlers.exceptions.LimitException;
 import com.example.jshop.warehouse_and_products.repository.WarehouseRepository;
@@ -26,14 +26,6 @@ public class WarehouseService {
         return warehouseRepository.findWarehouseByProductId(itemId).orElse(null);
     }
 
-    public List<Warehouse> findProductsInWarehouseByCategory(String category, Integer limit) throws CategoryNotFoundException {
-        List<Warehouse> list = warehouseRepository.findWarehouseByProduct_Category_Name(category, limit);
-        if (list.isEmpty()) {
-            throw new CategoryNotFoundException();
-        }
-        return list;
-    }
-
     public Warehouse save(Warehouse warehouse) {
         return warehouseRepository.save(warehouse);
     }
@@ -42,15 +34,19 @@ public class WarehouseService {
         warehouseRepository.deleteByProduct_ProductID(productId);
     }
 
-    public List<Warehouse> findProductsInWarehouseWithSelection(String categoryName, String productName, BigDecimal productPrice, Integer limit) throws LimitException {
+    public List<Warehouse> findProductsInWarehouseWithSelection(String categoryName, String productName, BigDecimal productPrice, Integer limit) throws LimitException, ProductNotFoundException {
         if (limit > 100 || limit < 1) {
             throw new LimitException();
         }
-        return warehouseRepository.findWarehouseByProduct_CategoryOrProduct_ProductNameOAndProduct_Price(categoryName, productName, productPrice, limit);
+        List<Warehouse> listOfProducts = warehouseRepository.findWarehouseByProduct_CategoryOrProduct_ProductNameOAndProduct_Price(categoryName, productName, productPrice, limit);
+        if (listOfProducts.isEmpty()) {
+            throw new ProductNotFoundException();
+        }
+        return listOfProducts;
     }
 
     public void sentForShipment(Order createdOrder) {
-        String shipment = "\n" + createdOrder.getListOfProducts() + "\n" + createdOrder.getLoggedCustomer().getAddress();
+        String shipment = createdOrder.getListOfProducts() + "\n" + createdOrder.getLoggedCustomer().getAddress();
         System.out.println("prepare and send shipment: " + shipment);
     }
 }

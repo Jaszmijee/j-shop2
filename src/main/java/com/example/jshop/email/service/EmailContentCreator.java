@@ -15,10 +15,11 @@ public class EmailContentCreator {
                 "\ntotal sum: " + order.getCalculatedPrice();
         if (order.getOrder_status() == ORDER_STATUS.UNPAID) {
             message += "\nYour payment is due on: " + order.getCreated().plusDays(14);
+            if (order.getCart().getListOfItems().isEmpty()) {
+                message = "Your order No: " + order.getOrderID() + " got cancelled";
+            }
         }
-        if (order.getCart().getListOfItems().isEmpty()) {
-            message = "Your order No: " + order.getOrderID() + " got cancelled";
-        } else {
+                else {
             message += "\nYour order is paid and ready for shipment,";
         }
 

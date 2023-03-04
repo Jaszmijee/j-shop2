@@ -41,6 +41,9 @@ public class Order {
     @Column(name = "calculatedValue")
     private BigDecimal calculatedPrice;
 
+    @Column(name = "paymentDue")
+    private LocalDate paymentDue;
+
     @OneToOne
     @JoinColumn(name = "carts_cart_id")
     private Cart cart;
@@ -68,6 +71,10 @@ public class Order {
 
     public void setLoggedCustomer(LoggedCustomer loggedCustomer) {
         this.loggedCustomer = loggedCustomer;
+    }
+
+    public void setPaymentDue(LocalDate paymentDue) {
+        this.paymentDue = paymentDue;
     }
 }
 

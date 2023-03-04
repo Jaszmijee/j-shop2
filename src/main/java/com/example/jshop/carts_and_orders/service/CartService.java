@@ -154,7 +154,7 @@ public class CartService {
         return cartMapper.mapCartToCartDto(cartToUpdate);
     }
 
-    public void cancelCart(Long cartId) throws CartNotFoundException {
+    public void cancelCart(Long cartId) throws CartNotFoundException, ProductNotFoundException {
         Cart cart = findCartById(cartId);
         validateCartForProcessing(cart);
         if (!(cart.getListOfItems().isEmpty())) {
@@ -168,23 +168,32 @@ public class CartService {
         cartRepository.deleteById(cartId);
     }
 
-    private Order createNewOrder(Long cartId, AuthenticationDataDto authenticationDataDto) throws CartNotFoundException, UserNotFoundException, AccessDeniedException {
+    private Order createNewOrder(Long cartId, AuthenticationDataDto authenticationDataDto) throws CartNotFoundException, UserNotFoundException, AccessDeniedException, InvalidCustomerDataException {
         Cart cart = findCartById(cartId);
         LoggedCustomer loggedCustomer = customerService.verifyLogin(authenticationDataDto.getUsername(), authenticationDataDto.getPassword());
         String listOfItems = cart.getListOfItems().stream()
                 .map(itemMapper::mapToItemDto)
-                .map(result -> "\nproduct: " + result.getProductName() + ", quantity: " + result.getProductQuantity() + ", total price: " + result.getCalculatedPrice())
-                .collect(Collectors.joining("\n"));
+                .map(result -> "product: " + result.getProductName() + ", quantity: " + result.getProductQuantity() + ", total price: " + result.getCalculatedPrice())
+                .collect(Collectors.joining(","));
         cart.setCalculatedPrice(calculateCurrentCartValue(cart));
         BigDecimal calculatedPrice = calculateCurrentCartValue(cart);
-        Order createdOrder = new Order(loggedCustomer, cart, LocalDate.now(), ORDER_STATUS.UNPAID, listOfItems, calculatedPrice);
+        Order createdOrder = Order.builder()
+                .loggedCustomer(loggedCustomer)
+                .cart(cart)
+                .created(LocalDate.now())
+                .order_status(ORDER_STATUS.UNPAID)
+                .listOfProducts(listOfItems)
+                .calculatedPrice(calculatedPrice)
+                .paymentDue(LocalDate.now().plusDays(14))
+                .build();
+
         loggedCustomer.getListOfOrders().add(createdOrder);
         customerService.updateCustomer(loggedCustomer);
         orderService.save(createdOrder);
         return createdOrder;
     }
 
-    public OrderDtoToCustomer finalizeCart(Long cartId, AuthenticationDataDto authenticationDataDto) throws CartNotFoundException, UserNotFoundException, AccessDeniedException {
+    public OrderDtoToCustomer finalizeCart(Long cartId, AuthenticationDataDto authenticationDataDto) throws CartNotFoundException, UserNotFoundException, AccessDeniedException, InvalidCustomerDataException {
         customerService.verifyLogin(authenticationDataDto.getUsername(), authenticationDataDto.getPassword());
         Order order = createNewOrder(cartId, authenticationDataDto);
         emailService.send(emailCreator.createContent(order));
@@ -207,18 +216,20 @@ public class CartService {
         return true;
     }
 
-    public OrderDtoToCustomer payForCart(Long orderId, AuthenticationDataDto authenticationDataDto) throws UserNotFoundException, AccessDeniedException, OrderNotFoundException, PaymentErrorException {
+    public OrderDtoToCustomer payForCart(Long orderId, AuthenticationDataDto authenticationDataDto) throws UserNotFoundException, AccessDeniedException, OrderNotFoundException, PaymentErrorException, InvalidCustomerDataException {
         customerService.verifyLogin(authenticationDataDto.getUsername(), authenticationDataDto.getPassword());
         Order order = validateOrderToPay(orderId, authenticationDataDto.getUsername());
         boolean isPaid = orderIsPaid(order);
         if (!(isPaid)) {
             throw new PaymentErrorException();
         } else {
+            order.setOrder_status(ORDER_STATUS.PAID);
+            orderService.save(order);
             emailService.send(emailCreator.createContent(order));
             Cart cart = order.getCart();
             order.setCart(null);
-            order.setOrder_status(ORDER_STATUS.PAID);
             order.setPaid(LocalDate.now());
+            order.setPaymentDue(null);
             orderService.save(order);
             cartRepository.deleteById(cart.getCartID());
             warehouseService.sentForShipment(order);
@@ -234,8 +245,8 @@ public class CartService {
         cartRepository.save(cart);
         String listOfItems = cart.getListOfItems().stream()
                 .map(itemMapper::mapToItemDto)
-                .map(result -> "product: " + result.getProductName() + ", quantity: " + result.getProductQuantity() + ", total price: " + result.getCalculatedPrice())
-                .collect(Collectors.joining("\n"));
+                .map(result -> "\nproduct: " + result.getProductName() + ", quantity: " + result.getProductQuantity() + ", total price: " + result.getCalculatedPrice())
+                .collect(Collectors.joining(" "));
         Order createdOrder = new Order(new LoggedCustomer(null, null, unauthenticatedCustomerDto.getFirstName(), unauthenticatedCustomerDto.getLastName(),
                 unauthenticatedCustomerDto.getEmail(), new Address(unauthenticatedCustomerDto.getStreet(), unauthenticatedCustomerDto.getHouseNo(), unauthenticatedCustomerDto.getFlatNo(), unauthenticatedCustomerDto.getZipCode(), unauthenticatedCustomerDto.getCity(), unauthenticatedCustomerDto.getCountry())),
                 cart, LocalDate.now(), ORDER_STATUS.UNPAID, listOfItems, cart.getCalculatedPrice());
@@ -263,19 +274,20 @@ public class CartService {
     }
 
     private void checkCustomerDataValidity(UnauthenticatedCustomerDto unauthenticatedCustomerDto) throws InvalidCustomerDataException {
-        if ((unauthenticatedCustomerDto.getFirstName().isEmpty())
-                || (unauthenticatedCustomerDto.getLastName().isEmpty())
-                || (unauthenticatedCustomerDto.getStreet().isEmpty())
-                || (unauthenticatedCustomerDto.getHouseNo().isEmpty())
-                || (unauthenticatedCustomerDto.getFlatNo().isEmpty())
-                || (unauthenticatedCustomerDto.getCity().isEmpty())
-                || (unauthenticatedCustomerDto.getZipCode().isEmpty())
-                || (unauthenticatedCustomerDto.getEmail().isEmpty())) {
+        if ((unauthenticatedCustomerDto.getFirstName() == null || unauthenticatedCustomerDto.getFirstName().isEmpty())
+                || (unauthenticatedCustomerDto.getLastName() == null || unauthenticatedCustomerDto.getLastName().isEmpty())
+                || (unauthenticatedCustomerDto.getStreet() == null || unauthenticatedCustomerDto.getStreet().isEmpty())
+                || (unauthenticatedCustomerDto.getHouseNo() == null || unauthenticatedCustomerDto.getHouseNo().isEmpty())
+                || (unauthenticatedCustomerDto.getCity() == null || unauthenticatedCustomerDto.getCity().isEmpty())
+                || (unauthenticatedCustomerDto.getZipCode() == null || unauthenticatedCustomerDto.getZipCode().isEmpty()
+                || !unauthenticatedCustomerDto.getZipCode().matches("^[0-9]{2}[-]?[0-9]{3}$"))
+                || (unauthenticatedCustomerDto.getEmail() == null || unauthenticatedCustomerDto.getEmail().isEmpty()
+                || !unauthenticatedCustomerDto.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$"))) {
             throw new InvalidCustomerDataException();
         }
     }
 
-    public void cancelOrder(Long orderId) throws OrderNotFoundException {
+    public void cancelOrder(Long orderId) throws OrderNotFoundException, ProductNotFoundException {
         Order orderToCancel = orderService.findOrderById(orderId);
         if (orderToCancel.getOrder_status() == ORDER_STATUS.PAID) {
             throw new OrderNotFoundException();
@@ -299,7 +311,7 @@ public class CartService {
         orderService.deleteOrder(orderToCancel);
     }
 
-    public void cancelOrderLogged(Long orderId, AuthenticationDataDto authenticationDataDto) throws UserNotFoundException, AccessDeniedException, OrderNotFoundException {
+    public void cancelOrderLogged(Long orderId, AuthenticationDataDto authenticationDataDto) throws UserNotFoundException, AccessDeniedException, OrderNotFoundException, InvalidCustomerDataException, ProductNotFoundException {
         customerService.verifyLogin(authenticationDataDto.getUsername(), authenticationDataDto.getPassword());
         orderService.findByIdAndUserName(orderId, authenticationDataDto.getUsername());
         cancelOrder(orderId);
@@ -309,7 +321,7 @@ public class CartService {
         cartRepository.deleteByCartStatus(cartStatus);
     }
 
-    public void deleteByProcessingTime() throws CartNotFoundException {
+    public void deleteByProcessingTime() throws CartNotFoundException, ProductNotFoundException {
         List<Cart> listOfCarts = cartRepository.selectByProcessingTime();
         for (Cart cart : listOfCarts) {
             cancelCart(cart.getCartID());

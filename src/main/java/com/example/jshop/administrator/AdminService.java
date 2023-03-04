@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -54,7 +55,10 @@ public class AdminService {
     }
 
     public CategoryWithProductsDto showCategoryByNameWithProducts(String categoryName) throws CategoryNotFoundException {
-        Category category = categoryService.searchForProductsInCategory(categoryName);
+        Category category = categoryService.findByName(categoryName);
+        if (category == null){
+            throw new CategoryNotFoundException();
+        }
         return categoryMapper.mapToCategoryDtoAllInfo(category);
     }
 
@@ -114,7 +118,11 @@ public class AdminService {
     }
 
     public List<ProductDtoAllInfo> showAllProducts() {
+        List<ProductDtoAllInfo> productDtoAllInfo = new ArrayList<>();
         List<Product> productList = productService.findAllProducts();
+        if(productList.isEmpty()) {
+            return productDtoAllInfo;
+        }
         return productMapper.mapToProductDtoList(productList);
     }
 
